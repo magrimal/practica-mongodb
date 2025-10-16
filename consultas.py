@@ -1,7 +1,10 @@
 """
 Asignatura: SGDI
 Práctica 2:
-Autores: XXXXXXXXXXXXXXX
+Autores:
+- MARIA JOSÉ GRIMALDI FERNÁNDEZ
+- NATALIA PALOMA LA ROSA MONTERO
+- IREMAR LUHETSY RIVAS ÁLVAREZ
 
 Declaración de integridad
 Declaramos que esta solución es fruto exclusivamente de nuestro trabajo 
