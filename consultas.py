@@ -15,7 +15,6 @@ Declaramos además que no hemos realizado de manera deshonesta ninguna otra
 actividad que pueda mejorar nuestros resultados ni perjudicar los resultados 
 de los demás.
 """
-
 from bson import ObjectId
 from pymongo import MongoClient
 mongoclient = MongoClient("mongodb://localhost:27017/")
