@@ -81,7 +81,7 @@ def usuarios_vieron_pelicula(mongoclient, id_pelicula, inicio, fin):
 
     usuariosVieronPeliculas = usuarios.find({"visualizaciones": { "$elemMatch": {"fecha": { "$gte": inicio, "$lt": fin } ,"_id": ObjectId(id_pelicula)} }}, {"_id": 1 })
 
-    return list(usuariosVieronPeliculas) #orden de impresión no es igual al pdf
+    return list(usuariosVieronPeliculas) #orden de impresión no es igual al pdf. ¿es correcto comparar fechas como strings?
 
 #print(usuario_peliculas(mongoclient, "gnoguera", 3))
 print(usuarios_gustos(mongoclient, ["terror", "comedia"], 5))
