@@ -22,14 +22,14 @@ import pandas as pd
 import re
 import datetime
 
-def obtener_usuarios(mongoclient):
+def obtener_usuarios(mongoclient): #cambiar el nombre de la bd sgdi_pr2
     db = mongoclient["practica2"]
     return db["usuarios"]
 def obtener_peliculas(mongoclient):
     db = mongoclient["practica2"]
     return db["peliculas"]
 
-def usuario_peliculas(mongoclient, user_id, n):
+def usuario_peliculas(mongoclient, user_id, n): #CAMBIAR TODOS QUE DEVUELVA pymongo.cursor.Cursor 
     usuarios = obtener_usuarios(mongoclient)
 
     usuariosPeliculas = usuarios.find({"_id": user_id}, {"visualizaciones": {"$slice":n}, "_id":0,"visualizaciones":1, "email":1})

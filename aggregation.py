@@ -22,7 +22,7 @@ mongoclient = MongoClient("mongodb://localhost:27017/")
 import pandas as pd
 import re
 
-def obtener_usuarios(mongoclient):
+def obtener_usuarios(mongoclient): #cambiar el nombre de la bd sgdi_pr2
     db = mongoclient["practica2"]
     return db["usuarios"]
 def obtener_peliculas(mongoclient):
@@ -30,7 +30,7 @@ def obtener_peliculas(mongoclient):
     return db["peliculas"]
 
 
-def agg1(mongoclient):
+def agg1(mongoclient): #CAMBIAR TODOS QUE DEVUELVA pymongo.cursor.Cursor 
     peliculas = obtener_peliculas(mongoclient)
 
     agg1 = peliculas.aggregate([
@@ -169,7 +169,7 @@ def agg4(mongoclient):
     }
 ])
 
-    return list(agg4)
+    return list(agg4)#preguntar al profe si había que usar índices
 
 #print(agg1(mongoclient))
 #print(agg2(mongoclient, "Emiratos Árabes Unidos"))
