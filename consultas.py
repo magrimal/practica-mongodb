@@ -22,14 +22,14 @@ import pandas as pd
 import re
 import datetime
 
-def obtener_usuarios(mongoclient):
+def obtener_usuarios(mongoclient): #cambiar el nombre de la bd sgdi_pr2
     db = mongoclient["practica2"]
     return db["usuarios"]
 def obtener_peliculas(mongoclient):
     db = mongoclient["practica2"]
     return db["peliculas"]
 
-def usuario_peliculas(mongoclient, user_id, n):
+def usuario_peliculas(mongoclient, user_id, n): #CAMBIAR TODOS QUE DEVUELVA pymongo.cursor.Cursor 
     usuarios = obtener_usuarios(mongoclient)
 
     usuariosPeliculas = usuarios.find({"_id": user_id}, {"visualizaciones": {"$slice":n}, "_id":0,"visualizaciones":1, "email":1})
@@ -81,7 +81,7 @@ def usuarios_vieron_pelicula(mongoclient, id_pelicula, inicio, fin):
 
     usuariosVieronPeliculas = usuarios.find({"visualizaciones": { "$elemMatch": {"fecha": { "$gte": inicio, "$lt": fin } ,"_id": ObjectId(id_pelicula)} }}, {"_id": 1 })
 
-    return list(usuariosVieronPeliculas) #orden de impresión no es igual al pdf
+    return list(usuariosVieronPeliculas) #orden de impresión no es igual al pdf. ¿es correcto comparar fechas como strings?
 
 #print(usuario_peliculas(mongoclient, "gnoguera", 3))
 print(usuarios_gustos(mongoclient, ["terror", "comedia"], 5))
