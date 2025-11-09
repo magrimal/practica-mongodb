@@ -7,86 +7,222 @@ Autores:
 - IREMAR LUHETSY RIVAS ÁLVAREZ
 
 Declaración de integridad
-Declaramos que esta solución es fruto exclusivamente de nuestro trabajo 
+Declaramos que esta solución es fruto exclusivamente de nuestro trabajo
 personal. No hemos sido ayudados por ninguna otra persona o sistema automático
-ni hemos obtenido la solución de fuentes externas, y tampoco hemos compartido 
-nuestra solución con otras personas de manera directa o indirexcta. 
-Declaramos además que no hemos realizado de manera deshonesta ninguna otra 
-actividad que pueda mejorar nuestros resultados ni perjudicar los resultados 
+ni hemos obtenido la solución de fuentes externas, y tampoco hemos compartido
+nuestra solución con otras personas de manera directa o indirecta.
+Declaramos además que no hemos realizado de manera deshonesta ninguna otra
+actividad que pueda mejorar nuestros resultados ni perjudicar los resultados
 de los demás.
 """
+
 from bson import ObjectId
 from pymongo import MongoClient
-mongoclient = MongoClient("mongodb://localhost:27017/")
-import pandas as pd
 import re
-import datetime
 
-def obtener_usuarios(mongoclient): #cambiar el nombre de la bd sgdi_pr2
-    db = mongoclient["practica2"]
-    return db["usuarios"]
-def obtener_peliculas(mongoclient):
-    db = mongoclient["practica2"]
-    return db["peliculas"]
-
-def usuario_peliculas(mongoclient, user_id, n): #CAMBIAR TODOS QUE DEVUELVA pymongo.cursor.Cursor 
-    usuarios = obtener_usuarios(mongoclient)
-
-    usuariosPeliculas = usuarios.find({"_id": user_id}, {"visualizaciones": {"$slice":n}, "_id":0,"visualizaciones":1, "email":1})
-
-    return list(usuariosPeliculas)
+MONGO_DATABASE_CONFIG = {
+    "name": "sgdi_pr2",
+    "collections": {"usuarios": "usuarios", "peliculas": "peliculas"},
+}
 
 
-def usuarios_gustos(mongoclient, gustos, n):
-    usuarios = obtener_usuarios(mongoclient)
+def obtener_usuarios(mongo_client: MongoClient):
+    """Obtiene la colección de usuarios de la base de datos.
 
-    usuariosGustos = usuarios.find({"gustos": {"$all": gustos}}, {"_id":1,"apellido1":1,"apellido2":1,"nombre":1}).limit(n)
+    Args:
+        mongo_client (MongoClient): El cliente de MongoDB.
 
-    return list(usuariosGustos) #¿en el pdf imprime 3 y son 5?
+    Returns:
+        Collection: La colección de usuarios.
+    """
+    db = mongo_client[MONGO_DATABASE_CONFIG["name"]]
+    return db[MONGO_DATABASE_CONFIG["collections"]["usuarios"]]
 
 
-def usuario_sexo_edad(mongoclient, sexo, edad_min, edad_max ):
-    usuarios = obtener_usuarios(mongoclient)
+def obtener_peliculas(mongo_client: MongoClient):
+    """Obtiene la colección de películas de la base de datos.
 
-    usuariosSexoEdad = usuarios.find({"sexo": sexo, "edad": { "$gt": edad_min - 1, "$lt": edad_max + 1}}, {"_id:1"})
+    Args:
+        mongo_client (MongoClient): El cliente de MongoDB.
 
-    return list(usuariosSexoEdad)
+    Returns:
+        Collection: La colección de películas.
+    """
+    db = mongo_client[MONGO_DATABASE_CONFIG["name"]]
+    return db[MONGO_DATABASE_CONFIG["collections"]["peliculas"]]
 
-def usuarios_apellidos(mongoclient):
-    usuarios = obtener_usuarios(mongoclient)
 
-    usuariosApellidos = usuarios.find({"$expr": { "$eq": ["$apellido1", "$apellido2"]}}, {"_id":0,"apellido1":1,"apellido2":1,"nombre":1}).sort({"edad":1})
-    
-    return list(usuariosApellidos) #apellido1 y apellido2 no se imprimen en el mismo orden que el pdf
-    
+def usuario_peliculas(mongo_client: MongoClient, user_id: str, n: int):
+    """Obtiene el email y las n primeras visualizaciones de películas de un usuario.
 
-def pelicula_prefijo(mongoclient, prefijo):
-    peliculas = obtener_peliculas(mongoclient)
+    Args:
+        mongo_client (MongoClient): El cliente de MongoDB.
+        user_id (str): El ID del usuario.
+        n (int): El número de películas a obtener.
 
-    peliculaPrefijo = peliculas.find({"director": re.compile(f"^{re.escape(prefijo)}")}, {"_id":0,"director":1,"titulo":1})
+    Returns:
+        Cursor: Un cursor con el email y visualizaciones del usuario.
+    """
+    usuarios = obtener_usuarios(mongo_client)
 
-    return list(peliculaPrefijo)
-    
+    return usuarios.find(
+        {"_id": user_id}, {"visualizaciones": {"$slice": n}, "email": 1, "_id": 0}
+    )
 
-def usuarios_gustos_numero(mongoclient, n):
-    usuarios = obtener_usuarios(mongoclient)
 
-    usuariosGustosNumero = usuarios.find({"gustos":{"$size":n}}, {"edad":1,"gustos":1}).sort({"edad":-1})
+def usuarios_gustos(mongo_client: MongoClient, gustos: list, n: int):
+    """Devuelve los primeros n usuarios que tienen todos los gustos especificados.
 
-    return list(usuariosGustosNumero) #edad se imprime como tercer elemento, a diferencia del pdf que se imprime en el segundo
-    
+    Args:
+        mongo_client (MongoClient): El cliente de MongoDB.
+        gustos (list): Lista de gustos que deben tener los usuarios.
+        n (int): Número máximo de usuarios a devolver.
 
-def usuarios_vieron_pelicula(mongoclient, id_pelicula, inicio, fin):
-    usuarios = obtener_usuarios(mongoclient)
+    Returns:
+        Cursor: Un cursor con _id, nombre y apellidos de los usuarios.
+    """
+    usuarios = obtener_usuarios(mongo_client)
 
-    usuariosVieronPeliculas = usuarios.find({"visualizaciones": { "$elemMatch": {"fecha": { "$gte": inicio, "$lt": fin } ,"_id": ObjectId(id_pelicula)} }}, {"_id": 1 })
+    return usuarios.find(
+        {"gustos": {"$all": gustos}},
+        {"_id": 1, "nombre": 1, "apellido1": 1, "apellido2": 1},
+    ).limit(n)
 
-    return list(usuariosVieronPeliculas) #orden de impresión no es igual al pdf. ¿es correcto comparar fechas como strings?
 
-#print(usuario_peliculas(mongoclient, "gnoguera", 3))
-print(usuarios_gustos(mongoclient, ["terror", "comedia"], 5))
-#print(usuario_sexo_edad(mongoclient, "M", 50, 80 ))
-#print(usuarios_apellidos(mongoclient))
-#print(pelicula_prefijo(mongoclient, "Yol"))
-#print(usuarios_gustos_numero(mongoclient, 6))
-#print(usuarios_vieron_pelicula(mongoclient, '583ef652323e9572e2814c48',  "1999-01-01", "2002-12-31"))
+def usuario_sexo_edad(
+    mongo_client: MongoClient, sexo: str, edad_min: int, edad_max: int
+):
+    """Obtiene los usuarios de un sexo y rango de edad específicos.
+
+    Args:
+        mongo_client (MongoClient): El cliente de MongoDB.
+        sexo (str): El sexo de los usuarios ('M' o 'F').
+        edad_min (int): Edad mínima (incluida).
+        edad_max (int): Edad máxima (incluida).
+
+    Returns:
+        Cursor: Un cursor con los _id de los usuarios que cumplen los criterios.
+    """
+    usuarios = obtener_usuarios(mongo_client)
+
+    return usuarios.find(
+        {"sexo": sexo, "edad": {"$gte": edad_min, "$lte": edad_max}}, {"_id": 1}
+    )
+
+
+def usuarios_apellidos(mongo_client: MongoClient):
+    """Devuelve usuarios cuyos apellidos coinciden, ordenados por edad ascendente.
+
+    Args:
+        mongo_client (MongoClient): El cliente de MongoDB.
+
+    Returns:
+        Cursor: Un cursor con nombre y apellidos de los usuarios.
+    """
+    usuarios = obtener_usuarios(mongo_client)
+
+    return usuarios.find(
+        {"$expr": {"$eq": ["$apellido1", "$apellido2"]}},
+        {"_id": 0, "nombre": 1, "apellido1": 1, "apellido2": 1},
+    ).sort("edad", 1)
+
+
+def pelicula_prefijo(mongo_client: MongoClient, prefijo: str):
+    """Recupera películas cuyo director tiene un nombre que empieza por un prefijo.
+
+    Args:
+        mongo_client (MongoClient): El cliente de MongoDB.
+        prefijo (str): Prefijo del nombre del director.
+
+    Returns:
+        Cursor: Un cursor con título y director de las películas.
+    """
+    peliculas = obtener_peliculas(mongo_client)
+
+    return peliculas.find(
+        {"director": re.compile(f"^{re.escape(prefijo)}")},
+        {"_id": 0, "titulo": 1, "director": 1},
+    )
+
+
+def usuarios_gustos_numero(mongo_client: MongoClient, n: int):
+    """Obtiene usuarios que tienen exactamente n gustos, ordenados por edad descendente.
+
+    Args:
+        mongo_client (MongoClient): El cliente de MongoDB.
+        n (int): Número exacto de gustos.
+
+    Returns:
+        Cursor: Un cursor con _id, edad y gustos de los usuarios.
+    """
+    usuarios = obtener_usuarios(mongo_client)
+
+    return usuarios.find(
+        {"gustos": {"$size": n}}, {"_id": 1, "edad": 1, "gustos": 1}
+    ).sort("edad", -1)
+
+
+def usuarios_vieron_pelicula(
+    mongo_client: MongoClient, id_pelicula: str, inicio: str, fin: str
+):
+    """Devuelve usuarios que vieron una película en un rango de fechas.
+
+    Args:
+        mongo_client (MongoClient): El cliente de MongoDB.
+        id_pelicula (str): El ID de la película (como string).
+        inicio (str): Fecha de inicio en formato 'YYYY-MM-DD'.
+        fin (str): Fecha de fin en formato 'YYYY-MM-DD' (no incluida).
+
+    Returns:
+        Cursor: Un cursor con los _id de los usuarios.
+    """
+    usuarios = obtener_usuarios(mongo_client)
+
+    return usuarios.find(
+        {
+            "visualizaciones": {
+                "$elemMatch": {
+                    "_id": ObjectId(id_pelicula),
+                    "fecha": {"$gte": inicio, "$lt": fin},
+                }
+            }
+        },
+        {"_id": 1},
+    )
+
+
+if __name__ == "__main__":
+    from pprint import pprint
+
+    mongo_client = MongoClient("mongodb://localhost:27017/")
+
+    # Ejemplos de prueba
+    print("\n=== Test usuario_peliculas ===")
+    for usuario in usuario_peliculas(mongo_client, "fernandonoguera", 3):
+        pprint(usuario)
+
+    print("=== Test usuarios_gustos ===")
+    for usuario in usuarios_gustos(mongo_client, ["terror", "comedia"], 5):
+        pprint(usuario)
+
+    print("\n=== Test usuario_sexo_edad ===")
+    for usuario in usuario_sexo_edad(mongo_client, "M", 50, 80):
+        pprint(usuario)
+
+    print("\n=== Test usuarios_apellidos ===")
+    for usuario in usuarios_apellidos(mongo_client):
+        pprint(usuario)
+
+    print("\n=== Test pelicula_prefijo ===")
+    for pelicula in pelicula_prefijo(mongo_client, "Yol"):
+        pprint(pelicula)
+
+    print("\n=== Test usuarios_gustos_numero ===")
+    for usuario in usuarios_gustos_numero(mongo_client, 6):
+        pprint(usuario)
+
+    print("\n=== Test usuarios_vieron_pelicula ===")
+    for usuario in usuarios_vieron_pelicula(
+        mongo_client, "583ef652323e9572e2814c48", "1999-01-01", "2002-12-31"
+    ):
+        pprint(usuario)
